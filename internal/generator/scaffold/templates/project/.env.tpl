@@ -1,0 +1,22 @@
+APP_ENV=development
+
+LOG_LEVEL=info
+LOG_JSON=false
+
+HTTP_PUBLIC_BIND_ADDR=:8080
+HTTP_READ_TIMEOUT_SEC=15
+HTTP_WRITE_TIMEOUT_SEC=15
+HTTP_IDLE_TIMEOUT_SEC=60
+
+{{ if .Options.Infra.Postgres -}}
+POSTGRES_DSN=postgres://user:password@localhost:5432/db?sslmode=disable
+POSTGRES_MAX_OPEN_CONNS=50
+POSTGRES_MAX_IDLE_CONNS=10
+POSTGRES_CONN_MAX_LIFETIME_MINUTES=30
+{{ end -}}
+
+{{- if .Options.Infra.Redis }}
+REDIS_ADDR=localhost:6379
+REDIS_PASSWORD=
+REDIS_DB=0
+{{- end }}
