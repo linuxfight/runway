@@ -1,22 +1,28 @@
 package server
 
-import "fmt"
-
-func buildLoaderSource(importPath string) string {
-	return fmt.Sprintf(`
-package main
-
 import (
-	"encoding/json"
-	"os"
-
-	"%s"
+	"bytes"
+	"fmt"
+	"text/template"
 )
 
-func main() {
-	var p Routes
-	routes := p.Routes()
-	_ = json.NewEncoder(os.Stdout).Encode(routes)
+type loaderData struct {
+	Pkg string
 }
-`, importPath)
+
+func buildLoaderSource(pkg string) string {
+	tpl, err := template.ParseFS(tplFS, "templates/runway_loader.go.tpl")
+	if err != nil {
+		panic(fmt.Errorf("parse tpl: %w", err))
+	}
+
+	data := loaderData{
+		Pkg: pkg,
+	}
+	var buf bytes.Buffer
+	if err := tpl.Execute(&buf, data); err != nil {
+		panic(fmt.Errorf("exec tpl: %w", err))
+	}
+
+	return buf.String()
 }

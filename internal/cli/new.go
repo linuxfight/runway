@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	survey "github.com/AlecAivazis/survey/v2"
-	"github.com/cryingcatscloud/runway/internal/generator/scaffold"
+	scaffold "github.com/cryingcatscloud/runway/internal/maker/project"
 	"github.com/spf13/cobra"
 )
 
@@ -65,6 +65,7 @@ var newCmd = &cobra.Command{
 		fmt.Println()
 		fmt.Println("Next steps:")
 		fmt.Printf("  cd %s\n", opts.ProjectName)
+		fmt.Println("  crew gen all")
 		fmt.Println("  go run ./cmd/" + opts.ProjectName)
 
 		return nil

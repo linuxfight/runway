@@ -1,4 +1,4 @@
-package scaffold
+package project
 
 type ProjectOptions struct {
 	ProjectName string

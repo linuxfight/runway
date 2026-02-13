@@ -5,6 +5,8 @@ import (
 	"embed"
 	"io"
 	"text/template"
+
+	"github.com/Masterminds/sprig/v3"
 )
 
 //go:embed templates/**
@@ -15,12 +17,12 @@ type Generator struct {
 }
 
 func New() (*Generator, error) {
-	b, err := tplFS.ReadFile("server.gen.go.tpl")
+	b, err := tplFS.ReadFile("templates/server.gen.go.tpl")
 	if err != nil {
 		return nil, err
 	}
 
-	t, err := template.New("server").Parse(string(b))
+	t, err := template.New("server").Funcs(sprig.FuncMap()).Parse(string(b))
 	if err != nil {
 		return nil, err
 	}

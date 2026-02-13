@@ -12,10 +12,14 @@ type Route struct {
 	Request     any
 	Response    any
 	Middlewares []echo.MiddlewareFunc
+
+	Summary     string
+	Description string
+	Tags        []string
 }
 
 type RoutesProvider interface {
-	Routes() []Route
+	Routes() map[string]Route
 }
 
 func MW(m ...echo.MiddlewareFunc) []echo.MiddlewareFunc { return m }

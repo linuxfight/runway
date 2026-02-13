@@ -1,13 +1,15 @@
 package server
 
 type TemplateData struct {
-	PackageName string
-	Routes      []RuntimeRoute
+	Package string
+	Module  string
+	Routes  []RuntimeRoute
 }
 
-func BuildTemplateData(routes []RuntimeRoute, pkg string) TemplateData {
+func BuildTemplateData(routes []RuntimeRoute, pkg, module string) TemplateData {
 	return TemplateData{
-		PackageName: pkg,
-		Routes:      routes,
+		Package: pkg,
+		Module:  module,
+		Routes:  routes,
 	}
 }

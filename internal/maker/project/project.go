@@ -1,8 +1,8 @@
-package scaffold
+package project
 
 import (
 	"embed"
 )
 
-//go:embed templates/project/**
+//go:embed templates/**
 var projectTemplates embed.FS

@@ -1,4 +1,4 @@
-package scaffold
+package project
 
 import (
 	"bytes"
@@ -26,7 +26,7 @@ func CreateProject(root string, ctx ProjectContext) error {
 		target := strings.TrimSuffix(path, ".tpl")
 		target = strings.ReplaceAll(target, "{{ .ProjectName }}", ctx.ProjectName)
 
-		outPath := filepath.Join(root, strings.TrimPrefix(target, "templates/project/"))
+		outPath := filepath.Join(root, strings.TrimPrefix(target, "templates/"))
 
 		tpl, err := template.ParseFS(projectTemplates, path)
 		if err != nil {

@@ -17,24 +17,32 @@ type Router interface {
 
 func RegisterRoutes(r Router, h {{ .Module }}Handlers) {
     a := &{{ .Module }}Adapter{h: h}
+    routes := Routes{}.Routes()
 
     {{- range .Routes }}
     r.{{ .Method }}(
         "{{ .Path }}",
-        a.{{ .HandlerName }},
-        {{- range .Middlewares }}
-        {{ . }},
-        {{- end }}
+        a.{{ .Id }},
+        routes["{{ .Id }}"].Middlewares...,
     )
     {{- end }}
 }
 
 type {{ .Module }}Handlers interface {
     {{- range .Routes }}
-    {{ .HandlerName }}(
-        ctx context.Context,
-        req {{ .RequestType }},
-    ) ({{ .ResponseType }}, error)
+    {{- if .Request }}
+    {{- if .Response }}
+    {{ .Id }}(ctx context.Context, req {{ .Request }}) ({{ .Response }}, error)
+    {{- else }}
+    {{ .Id }}(ctx context.Context, req {{ .Request }}) error
+    {{- end }}
+    {{- else }}
+    {{- if .Response }}
+    {{ .Id }}(ctx context.Context) ({{ .Response }}, error)
+    {{- else }}
+    {{ .Id }}(ctx context.Context) error
+    {{- end }}
+    {{- end }}
     {{- end }}
 }
 
@@ -43,25 +51,39 @@ type {{ .Module }}Adapter struct {
 }
 
 {{ range .Routes }}
-func (a *{{ $.Module }}Adapter) {{ .HandlerName }}(c echo.Context) error {
-    var req {{ .RequestType }}
-
-    {{- range .PathParams }}
-    req.{{ . | title }} = c.Param("{{ . }}")
-    {{- end }}
+func (a *{{ $.Module }}Adapter) {{ .Id }}(c echo.Context) error {
+    {{- if .Request }}
+    var req {{ .Request }}
 
     if err := c.Bind(&req); err != nil {
         return err
     }
+    {{- end }}
 
-    resp, err := a.h.{{ .HandlerName }}(
-        c.Request().Context(),
-        req,
-    )
+    {{- if and .Request .Response }}
+    resp, err := a.h.{{ .Id }}(c.Request().Context(), req)
+    {{- else if .Request }}
+    err := a.h.{{ .Id }}(c.Request().Context(), req)
+    {{- else if .Response }}
+    resp, err := a.h.{{ .Id }}(c.Request().Context())
+    {{- else }}
+    err := a.h.{{ .Id }}(c.Request().Context())
+    {{- end }}
+
     if err != nil {
         return err
     }
 
-    return c.JSON(http.StatusOK, resp)
+	{{- if .Response }}
+	code := http.StatusOK
+	
+	if sc, ok := any(resp).(interface{ StatusCode() int }); ok {
+	    code = sc.StatusCode()
+	}
+	
+	return c.JSON(code, resp)
+	{{- else }}
+	return c.NoContent(http.StatusNoContent)
+	{{- end }}
 }
 {{ end }}
