@@ -11,7 +11,7 @@ import (
 
 type Router interface {
     {{- range .Routes }}
-    {{ .Method }}(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc)
+    {{ .Method }}(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
     {{- end }}
 }
 
