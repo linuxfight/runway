@@ -22,6 +22,8 @@ type RouteMeta struct {
 	Summary     string   `json:"summary,omitempty"`
 	Description string   `json:"description,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
+
+	Raw bool `json:"raw"`
 }
 
 func typeName(v any) string {
@@ -58,6 +60,7 @@ func main() {
 			Summary:     r.Summary,
 			Description: r.Description,
 			Tags:        r.Tags,
+			Raw:         r.Raw,
 		})
 	}
 

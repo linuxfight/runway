@@ -16,6 +16,8 @@ type Route struct {
 	Summary     string
 	Description string
 	Tags        []string
+
+	Raw bool
 }
 
 type RoutesProvider interface {

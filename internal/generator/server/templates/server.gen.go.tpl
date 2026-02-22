@@ -24,19 +24,25 @@ func RegisterRoutes(r *echo.Echo, h {{ .Module }}Handlers) {
 
 type {{ .Module }}Handlers interface {
     {{- range .Routes }}
-    {{- if .Request }}
-    {{- if .Response }}
+
+    {{- if .Raw }}
+    {{ .Id }}(c echo.Context) error
+
+    {{- else if .Request }}
+        {{- if .Response }}
     {{ .Id }}(ctx context.Context, req {{ .Request }}) ({{ .Response }}, error)
-    {{- else }}
+        {{- else }}
     {{ .Id }}(ctx context.Context, req {{ .Request }}) error
-    {{- end }}
+        {{- end }}
+
     {{- else }}
-    {{- if .Response }}
+        {{- if .Response }}
     {{ .Id }}(ctx context.Context) ({{ .Response }}, error)
-    {{- else }}
+        {{- else }}
     {{ .Id }}(ctx context.Context) error
+        {{- end }}
     {{- end }}
-    {{- end }}
+
     {{- end }}
 }
 
@@ -46,38 +52,49 @@ type {{ .Module }}Adapter struct {
 
 {{ range .Routes }}
 func (a *{{ $.Module }}Adapter) {{ .Id }}(c echo.Context) error {
-    {{- if .Request }}
+
+    {{- if .Raw }}
+    return a.h.{{ .Id }}(c)
+
+    {{- else }}
+
+        {{- if .Request }}
     var req {{ .Request }}
 
     if err := c.Bind(&req); err != nil {
         return err
     }
-    {{- end }}
+        {{- end }}
 
-    {{- if and .Request .Response }}
+        {{- if and .Request .Response }}
     resp, err := a.h.{{ .Id }}(c.Request().Context(), req)
-    {{- else if .Request }}
+
+        {{- else if .Request }}
     err := a.h.{{ .Id }}(c.Request().Context(), req)
-    {{- else if .Response }}
+
+        {{- else if .Response }}
     resp, err := a.h.{{ .Id }}(c.Request().Context())
-    {{- else }}
+
+        {{- else }}
     err := a.h.{{ .Id }}(c.Request().Context())
-    {{- end }}
+        {{- end }}
 
     if err != nil {
         return err
     }
 
-	{{- if .Response }}
-	code := http.StatusOK
-	
-	if sc, ok := any(resp).(interface{ StatusCode() int }); ok {
-	    code = sc.StatusCode()
-	}
-	
-	return c.JSON(code, resp)
-	{{- else }}
-	return c.NoContent(http.StatusNoContent)
-	{{- end }}
+        {{- if .Response }}
+    code := http.StatusOK
+
+    if sc, ok := any(resp).(interface{ StatusCode() int }); ok {
+        code = sc.StatusCode()
+    }
+
+    return c.JSON(code, resp)
+        {{- else }}
+    return c.NoContent(http.StatusNoContent)
+        {{- end }}
+
+    {{- end }}
 }
 {{ end }}

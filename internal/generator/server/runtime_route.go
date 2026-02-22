@@ -12,4 +12,6 @@ type RuntimeRoute struct {
 	Summary     string   `json:"summary"`
 	Description string   `json:"description"`
 	Tags        []string `json:"tags"`
+
+	Raw bool `json:"raw"`
 }
