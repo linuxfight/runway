@@ -33,6 +33,7 @@ func (c *Controller) CreateNote(
 // GetNote handles GET /notes/:id
 func (c *Controller) GetNote(
 	ctx context.Context,
+	req api.GetNoteRequest,
 ) (api.NoteResponse, error) {
 	return c.service.GetNote(ctx, req.ID)
 }

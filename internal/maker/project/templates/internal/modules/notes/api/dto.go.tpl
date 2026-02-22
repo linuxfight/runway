@@ -5,6 +5,10 @@ type CreateNoteRequest struct {
 	Content string `json:"content"`
 }
 
+type GetNoteRequest struct {
+	ID string `path:"id"`
+}
+
 type NoteResponse struct {
 	ID      string `json:"id"`
 	Title   string `json:"title"`

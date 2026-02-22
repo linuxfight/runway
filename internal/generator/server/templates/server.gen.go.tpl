@@ -9,13 +9,7 @@ import (
     "github.com/labstack/echo/v4"
 )
 
-type Router interface {
-    {{- range .Routes }}
-    {{ .Method }}(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-    {{- end }}
-}
-
-func RegisterRoutes(r Router, h {{ .Module }}Handlers) {
+func RegisterRoutes(r *echo.Echo, h {{ .Module }}Handlers) {
     a := &{{ .Module }}Adapter{h: h}
     routes := Routes{}.Routes()
 

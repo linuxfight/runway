@@ -22,6 +22,7 @@ func (Routes) Routes() map[string]runway.Route {
 		"GetNote": {
 			Method:   http.MethodGet,
 			Path:     "/notes/:id",
+			Request:  GetNoteRequest{},
 			Response: NoteResponse{},
 			Summary:  "Get note by ID",
 			Tags:     []string{"notes"},
