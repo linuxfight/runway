@@ -58,7 +58,15 @@ func generateOne(gen *Generator, mod *gomod.Info, pkgDir string) error {
 	pkgName := filepath.Base(absPkg)
 	moduleName := filepath.Base(filepath.Dir(absPkg))
 
-	data := BuildTemplateData(routes, pkgName, moduleName)
+	needCtx, needHTTP := computeImports(routes)
+
+	data := BuildTemplateData(
+		routes,
+		pkgName,
+		moduleName,
+		needCtx,
+		needHTTP,
+	)
 
 	out, err := gen.GenerateBytes(data)
 	if err != nil {
@@ -71,4 +79,21 @@ func generateOne(gen *Generator, mod *gomod.Info, pkgDir string) error {
 
 	fmt.Println("✔ server generated:", outPath)
 	return nil
+}
+
+func computeImports(routes []RuntimeRoute) (needContext bool, needHTTP bool) {
+	for _, r := range routes {
+
+		// если не raw — используется context
+		if !r.Raw {
+			needContext = true
+			needHTTP = true // потому что используется http.StatusNoContent
+		}
+
+		// если есть response — используется http.StatusOK
+		if r.Response != "" {
+			needHTTP = true
+		}
+	}
+	return
 }

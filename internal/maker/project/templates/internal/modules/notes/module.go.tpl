@@ -9,4 +9,7 @@ var Module = fx.Module(
 		NewService,
 		NewController,
 	),
+	fx.Invoke(
+		RegisterHTTP,
+	),
 )

@@ -5,7 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	api "{{ .ModulePath }}/internal/modules/notes/api"
+	"{{ .ModulePath }}/internal/modules/notes/api"
 )
 
 type Controller struct {
@@ -14,7 +14,6 @@ type Controller struct {
 
 func NewController(e *echo.Echo, service *Service) *Controller {
 	controller := &Controller{service: service}
-	api.RegisterRoutes(e, controller)
 	return controller
 }
 

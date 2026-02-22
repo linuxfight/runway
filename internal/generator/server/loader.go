@@ -76,10 +76,14 @@ func LoadRoutes(pkgDir, importPath string) ([]RuntimeRoute, error) {
 
 		ids := map[string]struct{}{}
 
-		if _, ok := ids[r.Id]; ok {
-			return nil, fmt.Errorf("duplicate route id: %s", r.Id)
+		for i := range routes {
+			r := &routes[i]
+
+			if _, ok := ids[r.Id]; ok {
+				return nil, fmt.Errorf("duplicate route id: %s", r.Id)
+			}
+			ids[r.Id] = struct{}{}
 		}
-		ids[r.Id] = struct{}{}
 
 		routes[i].PathParams = extractPathParams(routes[i].Path)
 

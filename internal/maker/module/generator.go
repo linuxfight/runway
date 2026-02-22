@@ -3,7 +3,6 @@ package module
 import (
 	"bytes"
 	"embed"
-	"strings"
 	"text/template"
 )
 
@@ -11,11 +10,12 @@ import (
 var tplFS embed.FS
 
 type data struct {
-	Name  string
-	Title string
+	Name             string
+	Title            string
+	ModuleImportPath string
 }
 
-func render(tplName, name string) (string, error) {
+func render(tplName string, d data) (string, error) {
 	b, err := tplFS.ReadFile("templates/" + tplName)
 	if err != nil {
 		return "", err
@@ -24,11 +24,6 @@ func render(tplName, name string) (string, error) {
 	t, err := template.New(tplName).Parse(string(b))
 	if err != nil {
 		return "", err
-	}
-
-	d := data{
-		Name:  name,
-		Title: strings.ToUpper(name[:1]) + name[1:],
 	}
 
 	var buf bytes.Buffer

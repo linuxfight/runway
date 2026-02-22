@@ -1,0 +1,20 @@
+package notes
+
+import (
+	"github.com/labstack/echo/v4"
+	"go.uber.org/fx"
+
+	"{{ .ModulePath }}/internal/modules/notes/api"
+)
+
+type httpParams struct {
+	fx.In
+
+	Echo       *echo.Echo
+	Controller *Controller
+}
+
+func RegisterHTTP(p httpParams) {
+	//Register middlewares there
+	api.RegisterRoutes(p.Echo, p.Controller, nil)
+}

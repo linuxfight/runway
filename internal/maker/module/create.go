@@ -5,9 +5,16 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/cryingcatscloud/runway/internal/gomod"
 )
 
 func Create(name string) error {
+	mod, err := gomod.Discover(".")
+	if err != nil {
+		return err
+	}
+
 	name = strings.ToLower(name)
 
 	root := filepath.Join("internal", "modules", name)
@@ -26,12 +33,19 @@ func Create(name string) error {
 		filepath.Join(root, "controller.go"): "controller.go.tpl",
 		filepath.Join(root, "service.go"):    "service.go.tpl",
 		filepath.Join(root, "repository.go"): "repository.go.tpl",
+		filepath.Join(root, "register.go"):   "register.go.tpl",
 		filepath.Join(api, "routes.go"):      "routes.go.tpl",
 		filepath.Join(api, "model.go"):       "model.go.tpl",
 	}
 
+	d := data{
+		Name:             name,
+		Title:            strings.ToUpper(name[:1]) + name[1:],
+		ModuleImportPath: mod.ModulePath,
+	}
+
 	for out, tpl := range files {
-		src, err := render(tpl, name)
+		src, err := render(tpl, d)
 		if err != nil {
 			return err
 		}

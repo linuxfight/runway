@@ -3,81 +3,154 @@
 package {{ .Package }}
 
 import (
-    "context"
-    "net/http"
+{{- if .NeedContext }}
+	"context"
+{{- end }}
+{{- if .NeedHTTP }}
+	"net/http"
+{{- end }}
 
-    "github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4"
 )
 
-func RegisterRoutes(r *echo.Echo, h {{ .Module }}Handlers) {
-    a := &{{ .Module }}Adapter{h: h}
-    routes := Routes{}.Routes()
 
-    {{- range .Routes }}
-    r.{{ .Method }}(
-        "{{ .Path }}",
-        a.{{ .Id }},
-        routes["{{ .Id }}"].Middlewares...,
-    )
-    {{- end }}
+// ==============================
+// Middleware Builder
+// ==============================
+
+type MiddlewareBuilder struct {
+{{- range .Routes }}
+	{{ .Id | untitle }} []echo.MiddlewareFunc
+{{- end }}
 }
+
+{{- range .Routes }}
+
+func (b *MiddlewareBuilder) {{ .Id }}(m ...echo.MiddlewareFunc) {
+	b.{{ .Id | untitle }} = m
+}
+{{- end }}
+
+
+// ==============================
+// Route Registration
+// ==============================
+
+func RegisterRoutes(
+	r *echo.Echo,
+	h {{ .Module }}Handlers,
+	configure func(*MiddlewareBuilder),
+) {
+	a := &{{ .Module }}Adapter{h: h}
+
+	var b MiddlewareBuilder
+	if configure != nil {
+		configure(&b)
+	}
+
+{{- range .Routes }}
+
+	r.{{ .Method }}(
+		"{{ .Path }}",
+		a.{{ .Id }},
+		b.{{ .Id | untitle }}...,
+	)
+
+{{- end }}
+}
+
+
+// ==============================
+// Handlers Interface
+// ==============================
 
 type {{ .Module }}Handlers interface {
-    {{- range .Routes }}
-    {{- if .Request }}
-    {{- if .Response }}
-    {{ .Id }}(ctx context.Context, req {{ .Request }}) ({{ .Response }}, error)
-    {{- else }}
-    {{ .Id }}(ctx context.Context, req {{ .Request }}) error
-    {{- end }}
-    {{- else }}
-    {{- if .Response }}
-    {{ .Id }}(ctx context.Context) ({{ .Response }}, error)
-    {{- else }}
-    {{ .Id }}(ctx context.Context) error
-    {{- end }}
-    {{- end }}
-    {{- end }}
+{{- range .Routes }}
+
+	{{- if .Raw }}
+
+	{{ .Id }}(c echo.Context) error
+
+	{{- else if .Request }}
+
+		{{- if .Response }}
+	{{ .Id }}(ctx context.Context, req {{ .Request }}) ({{ .Response }}, error)
+		{{- else }}
+	{{ .Id }}(ctx context.Context, req {{ .Request }}) error
+		{{- end }}
+
+	{{- else }}
+
+		{{- if .Response }}
+	{{ .Id }}(ctx context.Context) ({{ .Response }}, error)
+		{{- else }}
+	{{ .Id }}(ctx context.Context) error
+		{{- end }}
+
+	{{- end }}
+
+{{- end }}
 }
 
+
+// ==============================
+// Adapter
+// ==============================
+
 type {{ .Module }}Adapter struct {
-    h {{ .Module }}Handlers
+	h {{ .Module }}Handlers
 }
 
 {{ range .Routes }}
+
 func (a *{{ $.Module }}Adapter) {{ .Id }}(c echo.Context) error {
-    {{- if .Request }}
-    var req {{ .Request }}
 
-    if err := c.Bind(&req); err != nil {
-        return err
-    }
-    {{- end }}
+	{{- if .Raw }}
+	return a.h.{{ .Id }}(c)
 
-    {{- if and .Request .Response }}
-    resp, err := a.h.{{ .Id }}(c.Request().Context(), req)
-    {{- else if .Request }}
-    err := a.h.{{ .Id }}(c.Request().Context(), req)
-    {{- else if .Response }}
-    resp, err := a.h.{{ .Id }}(c.Request().Context())
-    {{- else }}
-    err := a.h.{{ .Id }}(c.Request().Context())
-    {{- end }}
-
-    if err != nil {
-        return err
-    }
-
-	{{- if .Response }}
-	code := http.StatusOK
-	
-	if sc, ok := any(resp).(interface{ StatusCode() int }); ok {
-	    code = sc.StatusCode()
-	}
-	
-	return c.JSON(code, resp)
 	{{- else }}
+
+		{{- if .Request }}
+	var req {{ .Request }}
+
+	if err := c.Bind(&req); err != nil {
+		return err
+	}
+		{{- end }}
+
+		{{- if and .Request .Response }}
+	resp, err := a.h.{{ .Id }}(c.Request().Context(), req)
+
+		{{- else if .Request }}
+	err := a.h.{{ .Id }}(c.Request().Context(), req)
+
+		{{- else if .Response }}
+	resp, err := a.h.{{ .Id }}(c.Request().Context())
+
+		{{- else }}
+	err := a.h.{{ .Id }}(c.Request().Context())
+		{{- end }}
+
+	if err != nil {
+		return err
+	}
+
+		{{- if .Response }}
+
+	code := http.StatusOK
+
+	if sc, ok := any(resp).(interface{ StatusCode() int }); ok {
+		code = sc.StatusCode()
+	}
+
+	return c.JSON(code, resp)
+
+		{{- else }}
+
 	return c.NoContent(http.StatusNoContent)
+
+		{{- end }}
+
 	{{- end }}
 }
 {{ end }}
