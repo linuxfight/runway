@@ -11,5 +11,5 @@ var Module = fx.Module(
 	),
 	fx.Invoke(
 		RegisterHTTP,
-	)
+	),
 )

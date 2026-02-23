@@ -16,30 +16,43 @@ func addRoute(doc *openapi3.T, r RouteMeta, sb *SchemaBuilder) {
 		doc.Paths.Set(path, item)
 	}
 
+	pathParams := extractPathParams(r.Path)
+
 	op := &openapi3.Operation{
 		OperationID: r.ID,
 		Summary:     r.Summary,
 		Description: r.Description,
 		Tags:        r.Tags,
-		Parameters:  buildPathParams(r),
+		Parameters:  buildPathParams(pathParams),
 		Responses:   buildResponses(r, sb),
 	}
 
-	op.Parameters = append(op.Parameters, buildExtraParams(r)...)
+	op.Parameters = append(op.Parameters, buildExtraParams(r, pathParams)...)
 
 	// request body
 	if r.Request != nil {
-		sb.BuildFromType(r.Request)
+		hasBody := false
 
-		op.RequestBody = &openapi3.RequestBodyRef{
-			Value: &openapi3.RequestBody{
-				Required: true,
-				Content: openapi3.Content{
-					"application/json": &openapi3.MediaType{
-						Schema: sb.Ref(r.Request.Name),
+		for _, f := range r.Request.Fields {
+			if f.Param == "" && f.Query == "" && f.Header == "" {
+				hasBody = true
+				break
+			}
+		}
+
+		if hasBody {
+			sb.BuildFromType(r.Request)
+
+			op.RequestBody = &openapi3.RequestBodyRef{
+				Value: &openapi3.RequestBody{
+					Required: true,
+					Content: openapi3.Content{
+						"application/json": &openapi3.MediaType{
+							Schema: sb.Ref(r.Request.Name),
+						},
 					},
 				},
-			},
+			}
 		}
 	}
 
@@ -93,10 +106,10 @@ func buildResponses(r RouteMeta, sb *SchemaBuilder) *openapi3.Responses {
 	return responses
 }
 
-func buildPathParams(r RouteMeta) openapi3.Parameters {
+func buildPathParams(pathParams []string) openapi3.Parameters {
 	var params openapi3.Parameters
 
-	for _, p := range extractPathParams(r.Path) {
+	for _, p := range pathParams {
 		params = append(params, &openapi3.ParameterRef{
 			Value: &openapi3.Parameter{
 				Name:     p,
@@ -113,17 +126,21 @@ func buildPathParams(r RouteMeta) openapi3.Parameters {
 
 	return params
 }
-
-func buildExtraParams(r RouteMeta) openapi3.Parameters {
+func buildExtraParams(r RouteMeta, pathParams []string) openapi3.Parameters {
 	var params openapi3.Parameters
 
 	if r.Request == nil {
 		return params
 	}
 
+	// создаём set существующих path-параметров
+	existingPath := make(map[string]struct{}, len(pathParams))
+	for _, p := range pathParams {
+		existingPath[strings.ToLower(p)] = struct{}{}
+	}
+
 	for _, f := range r.Request.Fields {
 		name := f.JSON
-
 		var in string
 
 		switch {
@@ -136,6 +153,10 @@ func buildExtraParams(r RouteMeta) openapi3.Parameters {
 			name = f.Header
 
 		case f.Param != "":
+			// already exists
+			if _, ok := existingPath[strings.ToLower(f.Param)]; ok {
+				continue
+			}
 			in = "path"
 			name = f.Param
 
