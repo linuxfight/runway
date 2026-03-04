@@ -69,11 +69,44 @@ func (b *SchemaBuilder) BuildFromType(t *TypeMeta) {
 }
 
 func (b *SchemaBuilder) fieldSchema(f *FieldMeta) *openapi3.SchemaRef {
+
+	// ARRAY
+	if isSlice(f.Type) {
+
+		elemType := sliceElem(f.Type)
+
+		// nested object
+		if f.Nested != nil {
+			b.BuildFromType(f.Nested)
+
+			return &openapi3.SchemaRef{
+				Value: &openapi3.Schema{
+					Type:  &openapi3.Types{"array"},
+					Items: b.Ref(f.Nested.Name),
+				},
+			}
+		}
+
+		// primitive array
+		return &openapi3.SchemaRef{
+			Value: &openapi3.Schema{
+				Type: &openapi3.Types{"array"},
+				Items: &openapi3.SchemaRef{
+					Value: &openapi3.Schema{
+						Type: &openapi3.Types{mapPrimitive(elemType)},
+					},
+				},
+			},
+		}
+	}
+
+	// OBJECT
 	if f.Nested != nil {
 		b.BuildFromType(f.Nested)
 		return b.Ref(f.Nested.Name)
 	}
 
+	// PRIMITIVE
 	s := &openapi3.Schema{
 		Type: &openapi3.Types{mapPrimitive(f.Type)},
 	}
@@ -132,4 +165,12 @@ func applyValidation(s *openapi3.Schema, f *FieldMeta) (required bool) {
 	}
 
 	return
+}
+
+func isSlice(t string) bool {
+	return strings.HasPrefix(t, "[]")
+}
+
+func sliceElem(t string) string {
+	return strings.TrimPrefix(t, "[]")
 }
